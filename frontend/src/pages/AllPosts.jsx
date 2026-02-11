@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Box, Typography, Grid, Card, CardContent, CardMedia, CardActions, Button, Stack } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { PostAdd } from '@mui/icons-material'; // Import Icon
+import { PostAdd } from '@mui/icons-material';
 
 const AllPosts = () => {
   const [posts, setPosts] = useState([]);
@@ -14,7 +14,6 @@ const AllPosts = () => {
 
   return (
     <Box sx={{ mb: 8 }}>
-      {/* Updated Header Section */}
       <Box sx={{ mb: 5, textAlign: 'center', pt: 4 }}>
         <Typography variant="h3" fontWeight="900" color="primary" gutterBottom>
           Explore Posts

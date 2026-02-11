@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CloudUpload } from '@mui/icons-material';
+import { useFlash } from '../context/FlashContext'; 
 
 const CreateGroup = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const CreateGroup = () => {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const flash = useFlash();
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -37,30 +39,19 @@ const CreateGroup = () => {
     return res.data.imageUrl;
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !description.trim()) {
-      setError('Name and description are required');
-      return;
-    }
-
-    setLoading(true);
     try {
-      const imageUrl = await uploadImage();
+      const token = localStorage.getItem('token');
+      await axios.post('/api/groups', 
+        { name, description, theme }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       
-      await axios.post('/api/groups', {
-        name,
-        description,
-        theme: theme || 'General',
-        imageUrl, // Saving the image URL
-        creator: user._id,
-        members: [user._id],
-      });
+      flash(`Group "${name}" created!`, "success"); 
       navigate('/groups');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create group');
-    } finally {
-      setLoading(false);
+      flash(err.response?.data?.message || "Failed to create group", "error"); 
     }
   };
 

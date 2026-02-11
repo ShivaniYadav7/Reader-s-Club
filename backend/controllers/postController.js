@@ -1,5 +1,5 @@
 const Post = require("../models/Post");
-const Group = require("../models/Group"); // Import Group model
+const Group = require("../models/Group"); 
 
 const createPost = async (req, res) => {
   try {
@@ -10,7 +10,7 @@ const createPost = async (req, res) => {
       return res.status(400).json({ message: "Title and content are required" });
     }
 
-    // --- FIX: Check Group Membership ---
+    // Check Group Membership
     if (groupId) {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -26,7 +26,6 @@ const createPost = async (req, res) => {
         return res.status(403).json({ message: "You must be a member to post in this group" });
       }
     }
-    // -----------------------------------
 
     const newPostData = {
       title,
@@ -94,9 +93,115 @@ const assignToGroup = async (req, res) => {
       }
 };
 
+// Update Post
+const updatePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+
+    const post = await Post.findById(id);
+
+    if(!post) {
+      return res.status(404).json({ message: "Post not found "});
+    }
+
+    // AUTHORIZATION CHECK: Is the logged-in user the author?
+      // We compare the IDs
+    if(post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({message: "Not authorized to edit this post"});
+    }
+
+    // Update fields
+    post.title = title || post.title;
+    post.content = content || post.content;
+
+    const updatedPost = await post.save();
+    res.json(updatedPost);
+  } catch (error) {
+    res.status(500).json({message: "Server error", error:error.message});
+  }
+};
+
+// Delet Post
+const deletePost = async (req, res) => {
+  try {
+    const {id } = req.params;
+    const post = await Post.findById(id).populate('group');
+
+    if(!post) {
+      return res.status(404).json({message: "Post not found"});
+    }
+
+    // Defining permissions
+    const userId = req.user._id.toString();
+    const isAuthor = post.author.toString() === userId;
+
+    // Checking if post belongs  to a group AND if the user is that group's creator
+    const isGroupOwner = post.group && post.group.creator.toString() === userId;
+
+    // Allow if Author OR GroupOwner
+    if(!isAuthor && !isGroupOwner) {
+      return res.status(403).json({ message: "Not authorized to delete this post"});
+    }
+
+    await post.deleteOne();
+    res.json({ message: "Post removed"});
+    
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message});
+  }
+};
+
+// To comment on a post
+const addComment = async (req, res) => {
+  try {
+    const {id } = req.params;
+    const comment = {
+      text: req.body.text,
+      postedBy: req.user._id
+    };
+
+    const post = await Post.findByIdAndUpdate(
+      id,
+      { $push: { comments: comment }},
+      { new: true}
+    ).populate("comments.postedBy", "name");
+
+    if(!post) return res.status(404).json({ message: "Post not found"});
+
+    const newComment = post.comments[post.comments.length - 1];
+
+    console.log(`EMITTING TO room: ${id}`);
+    // Real-Time sockets: Emit only to people looking at this specific post
+    req.io.to(id).emit("new_comment", newComment);
+
+    res.json(newComment);
+  } catch (error) {
+    res.status(500).json({error: error.message});
+  }
+};
+
+// Get all posts belonging to a specific group
+const getPostsByGroup = async (req, res) => {
+  try {
+    const { id } = req.params; 
+    const posts = await Post.find({ group: id })
+      .populate("author", "name")
+      .sort({ createdAt: -1 });
+    
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 module.exports = {
   getAllPosts,
   createPost,
   getPostById,
   assignToGroup,
+  updatePost,
+  deletePost,
+  addComment,
+  getPostsByGroup,
 };

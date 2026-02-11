@@ -221,9 +221,7 @@ const Home = () => {
                      
                      <Typography variant="caption" fontWeight="bold">
                        {group.members.length} {group.members.length === 1 ? 'Member' : 'Members'}
-                     </Typography>
-                     {/* ------------------------ */}
-                     
+                     </Typography>                     
                    </Box>
                 </Box>
               </Card>

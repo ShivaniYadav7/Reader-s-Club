@@ -1,51 +1,35 @@
 import React, { useState } from 'react';
+import { Container, Typography, TextField, Button, Box, Paper, Alert } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
-import { Container, TextField, Button, Typography, Alert, Box, Paper } from '@mui/material';
+import { useFlash } from '../context/FlashContext';
 
 const SignIn = () => {
-  const { login, error } = useAuth();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const flash = useFlash();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login(formData.email, formData.password);
+    try {
+      await login(email, password);
+      flash(`Welcome back!`, 'success'); 
+    } catch (err) {
+      flash('Invalid email or password', 'error'); 
+    }
   };
 
   return (
-    <Container maxWidth="xs">
-      <Paper elevation={3} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography component="h1" variant="h5" fontWeight="bold" gutterBottom>
-          Sign In
-        </Typography>
-        
-        {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
-        
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-          <TextField
-            margin="normal" required fullWidth label="Email Address"
-            autoComplete="email" autoFocus
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-          />
-          <TextField
-            margin="normal" required fullWidth label="Password" type="password"
-            autoComplete="current-password"
-            value={formData.password}
-            onChange={(e) => setFormData({...formData, password: e.target.value})}
-          />
-          <Button type="submit" fullWidth variant="contained" size="large" sx={{ mt: 3, mb: 2 }}>
-            Sign In
-          </Button>
-          <Box textAlign="center">
-            <Link to="/signup" style={{ textDecoration: 'none', color: '#3d405b' }}>
-              Don't have an account? <strong>Sign Up</strong>
-            </Link>
-          </Box>
+      <Container maxWidth="xs">
+      <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Typography component="h1" variant="h5">Sign In</Typography>
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            <TextField margin="normal" required fullWidth label="Email Address" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />
+            <TextField margin="normal" required fullWidth label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>Sign In</Button>
         </Box>
-      </Paper>
+      </Box>
     </Container>
   );
 };
-
 export default SignIn;

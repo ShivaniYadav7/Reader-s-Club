@@ -124,11 +124,32 @@ const getGroupPosts = async (req, res) => {
   }
 };
 
-module.exports = {
-  createGroup,
-  getAllGroups,
-  joinGroup,
-  leaveGroup,
-  getGroupById,
-  getGroupPosts,
+const deleteGroup = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const group = await Group.findById(id);
+
+    if (!group) return res.status(404).json({ message: "Group not found" });
+
+    if (group.creator.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to delete this group" });
+    }
+
+    // Cascade delete posts
+    await Post.deleteMany({ group: id });
+    await group.deleteOne();
+
+    res.json({ message: "Group deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = { 
+  createGroup, 
+  getAllGroups, 
+  getGroupById, 
+  joinGroup, 
+  leaveGroup, 
+  deleteGroup
 };

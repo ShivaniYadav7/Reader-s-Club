@@ -2,12 +2,25 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+// Helper Function
+const validateEmail = (email) => {
+  return String(email)
+    .toLowerCase()
+    .match(
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    );
+};
+
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Please enter all fields" });
+    }
+
+    if(!validateEmail(email)) {
+      return res.status(400).json({ message: "Invalid email format"});
     }
 
     const userExists = await User.findOne({ email });
