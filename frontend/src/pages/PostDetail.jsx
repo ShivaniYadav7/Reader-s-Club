@@ -102,14 +102,13 @@ const PostDetail = () => {
 
     try {
       const token = localStorage.getItem('token');
-      // Saving to DB
       
-      const { data: newComment } = await axios.put(`/api/posts/${postId}/comment`,
-        {text: commentText },
-        {headers: {Authorization: `Bearer ${token}`}}
+      await axios.put(`/api/posts/${postId}/comment`,
+        { text: commentText },
+        { headers: { Authorization: `Bearer ${token}` }}
       );
 
-      setComments((prev) => [...prev, newComment]);
+      
       setCommentText(""); 
     } catch (err) {
       console.error("failed to post comment");

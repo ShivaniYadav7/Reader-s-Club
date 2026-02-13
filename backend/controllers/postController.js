@@ -58,8 +58,16 @@ const getAllPosts = async (req, res) => {
 const getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
-        .populate("author", "name")
-        .populate("group", "name");
+        .populate("author", "name") 
+        .populate("group", "name")  
+        .populate({
+            path: "comments",        
+            populate: {
+              path: "postedBy", 
+              select: "name"         
+            }
+        });
+
     if (post) {
       res.status(200).json(post);
     } else {
