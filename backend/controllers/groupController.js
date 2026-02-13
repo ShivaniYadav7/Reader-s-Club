@@ -5,27 +5,36 @@ const mongoose = require("mongoose");
 
 const createGroup = async (req, res) => {
   try {
-    const { name, description, theme, imageUrl } = req.body;
+    const { name, description, theme } = req.body;
+
+    const imageUrl = req.file ? req.file.path : (req.body.imageUrl || "");
 
     if (!name || !description) {
       return res.status(400).json({ message: "Name and description are required" });
+    }
+
+    const existingGroup = await Group.findOne({ name });
+    if (existingGroup) {
+        return res.status(400).json({ message: "Group name must be unique" });
     }
 
     const group = await Group.create({
       name,
       description,
       theme: theme || "General",
-      imageUrl: imageUrl || "",
+      imageUrl: imageUrl, 
       creator: req.user._id,
       members: [req.user._id],
     });
 
+    // Add group to user's list
     await User.findByIdAndUpdate(req.user._id, {
       $push: { groups: group._id },
     });
 
     res.status(201).json(group);
   } catch (error) {
+    console.error("Create Group Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

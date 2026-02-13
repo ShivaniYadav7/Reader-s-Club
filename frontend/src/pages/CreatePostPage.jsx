@@ -15,7 +15,6 @@ const CreatePostPage = () => {
   const location = useLocation();
   const flash = useFlash();
   
-  // Get pre-selected group ID if user clicked "Post" from inside a group
   const preSelectedGroupId = location.state?.groupId || '';
 
   // 1. Redirect if not logged in
@@ -44,41 +43,37 @@ const CreatePostPage = () => {
   }, [user]);
 
   // 3. Handle Post Submission
-  const handleCreatePost = async (postData) => {
-    setLoading(true);
+  // ... imports
+
+const handleCreatePost = async (postData) => {
+  setLoading(true);
+  
+  const formData = new FormData();
+  formData.append('title', postData.title);
+  formData.append('content', postData.content);
+  if (postData.groupId) formData.append('groupId', postData.groupId);
+  if (postData.image) formData.append('image', postData.image); 
+
+  try {
+    const token = localStorage.getItem('token');
     
-    const formData = new FormData();
-    formData.append('title', postData.title);
-    formData.append('content', postData.content);
-    if (postData.groupId) formData.append('groupId', postData.groupId);
-    if (postData.image) formData.append('image', postData.image); 
+    await axios.post('/api/posts', formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    try {
-      const token = localStorage.getItem('token');
-      
-      // Send ONE request. The backend middleware will:
-      // 1. Upload image (Multer)
-      // 2. Check AI Safety (aiMiddleware)
-      // 3. Save to DB (postController)
-      await axios.post('/api/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      flash('Post published successfully!', 'success'); 
-      navigate('/');
-      
-    } catch (err) {
-      console.error(err);
-      // Catch 400 (AI Block) or 500 (Server Error)
-      const errorMsg = err.response?.data?.message || 'Failed to create post';
-      flash(errorMsg, 'error'); 
-    } finally {
-      setLoading(false);
-    }
-  };
+    flash('Post published successfully!', 'success'); 
+    navigate('/');
+    
+  } catch (err) {
+    console.error(err);
+    const errorMsg = err.response?.data?.message || 'Failed to create post';
+    flash(errorMsg, 'error'); 
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>

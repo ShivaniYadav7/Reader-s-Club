@@ -43,10 +43,23 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/groups', 
-        { name, description, theme }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      
+      // 1. Use FormData instead of JSON
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('description', description);
+      formData.append('theme', theme);
+      if (image) {
+        formData.append('image', image); // Must match backend upload.single('image')
+      }
+
+      // 2. Send FormData
+      await axios.post('/api/groups', formData, { 
+        headers: { 
+           Authorization: `Bearer ${token}` 
+           // Remember: NO manual Content-Type here either
+        } 
+      });
       
       flash(`Group "${name}" created!`, "success"); 
       navigate('/groups');

@@ -1,7 +1,7 @@
 const Post = require("../models/Post");
 const Group = require("../models/Group"); 
 
-const createPost = async (req, res) => {
+const createPost = async (req, res) => { 
   try {
     const { title, content, groupId, imageUrl: bodyImageUrl } = req.body;
     const imageUrl = bodyImageUrl || (req.file && req.file.path);
@@ -10,21 +10,11 @@ const createPost = async (req, res) => {
       return res.status(400).json({ message: "Title and content are required" });
     }
 
-    // Check Group Membership
     if (groupId) {
-      const group = await Group.findById(groupId);
-      if (!group) {
-        return res.status(404).json({ message: "Group not found" });
-      }
-
-      // Check if user is a member (String comparison)
-      const isMember = group.members.some(
-        (id) => id.toString() === req.user._id.toString()
-      );
-
-      if (!isMember) {
-        return res.status(403).json({ message: "You must be a member to post in this group" });
-      }
+       const group = await Group.findById(groupId);
+       if (!group) return res.status(404).json({ message: "Group not found" });
+       const isMember = group.members.some(id => id.toString() === req.user._id.toString());
+       if (!isMember) return res.status(403).json({ message: "You must be a member to post in this group" });
     }
 
     const newPostData = {
@@ -35,7 +25,15 @@ const createPost = async (req, res) => {
       group: groupId || undefined, 
     };
 
-    const post = await Post.create(newPostData);
+    let post = await Post.create(newPostData);
+
+    // Populate immediately for the UI
+    post = await post.populate("author", "name");
+    
+    if (groupId) {
+       post = await post.populate("group", "name");
+    }
+
     res.status(201).json(post);
   } catch (error) {
     console.error("Create Post Error:", error);
